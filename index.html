@@ -215,10 +215,10 @@ pre.code code{font-family:var(--mono);font-size:clamp(.72rem,1.05vw,.86rem);line
 .boot{position:fixed;inset:0;z-index:190;display:none;place-items:center;background:#02100c}
 .boot.run{display:grid}
 .boot .wrap{text-align:center}
-.boot .matrix{display:grid;grid-template-columns:repeat(5,18px);gap:8px;justify-content:center;margin-bottom:26px}
-.boot .matrix i{width:18px;height:18px;border-radius:3px;background:var(--led-dim);transition:.12s linear}
+.boot .matrix{display:grid;grid-template-columns:repeat(5,clamp(22px,4.4vw,34px));gap:clamp(8px,1.4vw,12px);justify-content:center;margin-bottom:30px}
+.boot .matrix i{width:clamp(22px,4.4vw,34px);height:clamp(22px,4.4vw,34px);border-radius:4px;background:var(--led-dim);transition:.12s linear}
 .boot .matrix i.on{background:var(--led);box-shadow:0 0 14px rgba(255,59,47,.9),0 0 30px rgba(255,59,47,.4)}
-.boot .log{font-family:var(--mono);font-size:.78rem;color:var(--teal);min-height:1.4em;letter-spacing:.06em}
+.boot .log{font-family:var(--mono);font-size:.9rem;color:var(--teal);min-height:1.4em;letter-spacing:.06em}
 .boot .ttl{margin-top:18px;font-family:var(--display);font-weight:700;font-size:clamp(1.4rem,5vw,3rem);
   opacity:0;letter-spacing:-.03em}
 .boot.reveal .ttl{animation:up .7s var(--ease) forwards}
@@ -354,4 +354,559 @@ F.board = (callouts) => {
   + '<path d="M336 38 q8 -6 16 0"><animate attributeName="opacity" values=".2;1;.2" dur="1.8s" begin=".3s" repeatCount="indefinite"/></path></g>'
   /* chip principal */
   + '<rect x="248" y="158" width="46" height="26" rx="3" fill="#0a1512" stroke="#3ddbb0" stroke-width="1"/>'
-  + '<text x="271" y="175" text-anchor="middle" font-size="9" fill="#
+  + '<text x="271" y="175" text-anchor="middle" font-size="9" fill="#3ddbb0" font-family="monospace">MCU</text>'
+  + pins
+  + (callouts ? callouts : '')
+  + '</svg>';
+};
+
+/* entrada → processamento → saída -------------------------------- */
+F.flow = () => {
+  const box = (x,l1,l2,color) =>
+    '<rect x="'+x+'" y="46" width="104" height="84" rx="10" fill="rgba(10,31,24,.9)" stroke="'+color+'" stroke-width="1.4"/>'
+    + '<text x="'+(x+52)+'" y="82" text-anchor="middle" font-size="14" fill="#eef4f1" font-family="sans-serif">'+l1+'</text>'
+    + '<text x="'+(x+52)+'" y="102" text-anchor="middle" font-size="10" fill="#8fa89e" font-family="monospace">'+l2+'</text>';
+  const dot = (from,delay) =>
+    '<circle r="4.5" fill="#3ddbb0"><animateMotion path="M'+from+' 88 h56" dur="1.5s" begin="'+delay+'s" repeatCount="indefinite"/>'
+    + '<animate attributeName="opacity" values="0;1;1;0" dur="1.5s" begin="'+delay+'s" repeatCount="indefinite"/></circle>';
+  return '<svg viewBox="0 0 420 190" role="img" aria-label="Entrada, processamento e saída">'
+  + box(12,'Entrada','SENSORES','#3ddbb0') + box(158,'Processo','MCU','#e0a458') + box(304,'Saída','ATUADORES','#ff3b2f')
+  + '<path d="M116 88 h42 M262 88 h42" stroke="#3a6b5c" stroke-width="1.6" stroke-dasharray="4 4"/>'
+  + dot(118,0) + dot(264,0.75)
+  + '<path d="M356 130 v26 h-292 v-26" stroke="#e0a458" stroke-width="1.2" fill="none" stroke-dasharray="5 5" opacity=".7"/>'
+  + '<text x="210" y="176" text-anchor="middle" font-size="10" fill="#8a6a3e" font-family="monospace">realimentação</text>'
+  + '</svg>';
+};
+
+/* onipresença: ícones --------------------------------------------- */
+F.ubiquity = () => {
+  const items = [
+    ['Carro','M8 30h32l-4-12H12z M14 36a4 4 0 1 0 8 0 M26 36a4 4 0 1 0 8 0'],
+    ['Micro-ondas','M6 12h36v24H6z M10 16h20v16H10z M34 18v4 M34 26v4'],
+    ['Marcapasso','M24 38s-14-9-14-18a7 7 0 0 1 14-4 7 7 0 0 1 14 4c0 9-14 18-14 18z'],
+    ['Drone','M10 12l8 8 M38 12l-8 8 M10 36l8-8 M38 36l-8-8 M18 18h12v12H18z'],
+    ['Semáforo','M16 6h16v36H16z M24 14v0 M24 24v0 M24 34v0'],
+    ['Relógio','M24 8a16 16 0 1 0 .1 0z M24 15v9l7 4']
+  ];
+  let g='';
+  items.forEach((it,i)=>{
+    const x=(i%3)*140+16, y=Math.floor(i/3)*104+10;
+    g += '<g transform="translate('+x+','+y+')">'
+      + '<rect width="124" height="88" rx="10" fill="rgba(10,31,24,.6)" stroke="rgba(224,164,88,.25)"/>'
+      + '<g transform="translate(38,10) scale(1)" fill="none" stroke="#e0a458" stroke-width="2" stroke-linecap="round"><path d="'+it[1]+'"/></g>'
+      + '<text x="62" y="76" text-anchor="middle" font-size="11" fill="#a9c0b6" font-family="sans-serif">'+it[0]+'</text></g>';
+  });
+  return '<svg viewBox="0 0 440 212" role="img" aria-label="Onde há sistemas embarcados">'+g+'</svg>';
+};
+
+/* anatomia do microcontrolador ------------------------------------ */
+F.mcu = () => {
+  const blk = (x,y,w,h,t,sub,c) =>
+    '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="7" fill="rgba(6,20,16,.9)" stroke="'+c+'" stroke-width="1.3"/>'
+    + '<text x="'+(x+w/2)+'" y="'+(y+h/2-1)+'" text-anchor="middle" font-size="12" fill="#eef4f1" font-family="sans-serif">'+t+'</text>'
+    + (sub?'<text x="'+(x+w/2)+'" y="'+(y+h/2+14)+'" text-anchor="middle" font-size="9" fill="#7f9a8f" font-family="monospace">'+sub+'</text>':'');
+  let pins='';
+  for(let i=0;i<11;i++){
+    pins += '<rect x="'+(40+i*32)+'" y="212" width="14" height="12" fill="#c9903f"/>';
+    pins += '<rect x="'+(40+i*32)+'" y="26" width="14" height="12" fill="#c9903f"/>';
+  }
+  return '<svg viewBox="0 0 420 250" role="img" aria-label="Blocos internos de um microcontrolador">'
+  + pins
+  + '<rect x="24" y="38" width="372" height="174" rx="12" fill="#08170f" stroke="#3ddbb0" stroke-width="1.5"/>'
+  + '<text x="210" y="58" text-anchor="middle" font-size="10" fill="#3ddbb0" font-family="monospace">MICROCONTROLADOR (SoC)</text>'
+  + blk(40,68,110,50,'CPU','núcleo ARM','#3ddbb0')
+  + blk(160,68,100,50,'Flash','programa','#e0a458')
+  + blk(270,68,110,50,'RAM','variáveis','#e0a458')
+  + '<path d="M96 118 v18 h228 v-18 M210 118 v18" stroke="#3ddbb0" stroke-width="1.4" fill="none"/>'
+  + '<circle r="4" fill="#3ddbb0"><animateMotion path="M96 136 h228" dur="2.2s" repeatCount="indefinite"/></circle>'
+  + '<text x="210" y="152" text-anchor="middle" font-size="9" fill="#5d7a70" font-family="monospace">barramento</text>'
+  + blk(40,158,80,42,'GPIO','','#ff3b2f')
+  + blk(128,158,80,42,'ADC','analógico','#ff3b2f')
+  + blk(216,158,80,42,'Timers','PWM','#ff3b2f')
+  + blk(304,158,76,42,'Rádio','2,4 GHz','#ff3b2f')
+  + '</svg>';
+};
+
+/* sinais: digital, analógico, PWM --------------------------------- */
+F.signals = () => {
+  const lane = (y,label,d,color) =>
+    '<text x="8" y="'+(y-16)+'" font-size="10" fill="#8fa89e" font-family="monospace">'+label+'</text>'
+    + '<path d="'+d+'" stroke="'+color+'" stroke-width="2" fill="none" stroke-linejoin="round"/>'
+    + '<path d="M8 '+y+' h404" stroke="#1e4a3c" stroke-width="1" stroke-dasharray="3 5"/>';
+  return '<svg viewBox="0 0 420 230" role="img" aria-label="Sinais digital, analógico e PWM">'
+  + lane(50,'DIGITAL — ligado/desligado','M8 50 h50 v-28 h60 v28 h44 v-28 h70 v28 h60 v-28 h50 v28 h70','#3ddbb0')
+  + lane(130,'ANALÓGICO — valores contínuos','M8 130 q40 -46 80 -6 q40 40 80 -22 q40 -50 80 10 q40 44 80 -18 q30 -20 84 -6','#e0a458')
+  + lane(210,'PWM — largura de pulso variável','M8 210 h14 v-26 h6 v26 h20 v-26 h12 v26 h20 v-26 h20 v26 h20 v-26 h28 v26 h20 v-26 h36 v26 h20 v-26 h44 v26 h20 v-26 h50 v26 h32','#ff3b2f')
+  + '</svg>';
+};
+
+/* sensores do micro:bit -------------------------------------------- */
+F.sensors = () => {
+  const it = [
+    ['Acelerômetro','movimento e inclinação','M10 34l10-20 10 20z M6 40h36'],
+    ['Bússola','campo magnético','M24 6a18 18 0 1 0 .1 0z M16 32l6-14 10-6-6 14z'],
+    ['Temperatura','medida no próprio chip','M20 8a4 4 0 0 1 8 0v18a8 8 0 1 1-8 0z'],
+    ['Luz','a matriz de LEDs vira sensor','M24 14a10 10 0 1 0 .1 0z M24 4v4 M24 40v4 M8 24h4 M36 24h4'],
+    ['Microfone','nível de som (v2)','M24 8a5 5 0 0 1 5 5v10a5 5 0 0 1-10 0V13a5 5 0 0 1 5-5z M14 22a10 10 0 0 0 20 0 M24 32v8'],
+    ['Toque','logo capacitivo (v2)','M18 26V12a4 4 0 0 1 8 0v14 M26 22a4 4 0 0 1 8 0v10a10 10 0 0 1-20 0v-4']
+  ];
+  let g='';
+  it.forEach((s,i)=>{
+    const y=i*44+8;
+    g += '<g transform="translate(8,'+y+')">'
+      + '<rect width="404" height="38" rx="9" fill="rgba(10,31,24,.55)" stroke="rgba(61,219,176,.18)"/>'
+      + '<g transform="translate(12,-3) scale(.72)" fill="none" stroke="#3ddbb0" stroke-width="2.4" stroke-linecap="round"><path d="'+s[0+2]+'"/></g>'
+      + '<text x="56" y="18" font-size="13" fill="#eef4f1" font-family="sans-serif">'+s[0]+'</text>'
+      + '<text x="56" y="31" font-size="10" fill="#7f9a8f" font-family="monospace">'+s[1]+'</text></g>';
+  });
+  return '<svg viewBox="0 0 420 280" role="img" aria-label="Sensores do micro:bit">'+g+'</svg>';
+};
+
+/* matriz de LEDs animada ------------------------------------------- */
+F.matrix = () => {
+  const heart = [[0,1],[0,3],[1,0],[1,2],[1,4],[2,0],[2,4],[3,1],[3,3],[4,2]];
+  let cells='';
+  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+    const on = heart.some(p=>p[0]===r&&p[1]===c);
+    cells += '<rect x="'+(60+c*58)+'" y="'+(30+r*44)+'" width="30" height="34" rx="5" fill="'+(on?'#ff3b2f':'#2c110f')+'" stroke="#3a1512">'
+      +(on?'<animate attributeName="opacity" values="1;.35;1" dur="1.8s" begin="'+(r*.1)+'s" repeatCount="indefinite"/>':'')+'</rect>';
+  }
+  return '<svg viewBox="0 0 420 270" role="img" aria-label="Matriz de LEDs 5 por 5">'
+  + '<rect x="34" y="8" width="352" height="232" rx="12" fill="#08110d" stroke="#1d5c47"/>' + cells
+  + '<text x="210" y="262" text-anchor="middle" font-size="11" fill="#7f9a8f" font-family="monospace">25 LEDs · multiplexação por varredura</text>'
+  + '</svg>';
+};
+
+/* rádio entre placas ------------------------------------------------ */
+F.radio = () => {
+  const mini = (x) => '<rect x="'+x+'" y="70" width="110" height="70" rx="9" fill="#0f3a2c" stroke="#1d5c47" stroke-width="1.5"/>'
+    + '<rect x="'+(x+32)+'" y="88" width="46" height="34" rx="4" fill="#08110d" stroke="#3a1512"/>'
+    + '<circle cx="'+(x+42)+'" cy="98" r="3" fill="#ff3b2f"/><circle cx="'+(x+68)+'" cy="98" r="3" fill="#ff3b2f"/>'
+    + '<circle cx="'+(x+55)+'" cy="112" r="3" fill="#ff3b2f"/>';
+  let waves='';
+  for(let i=0;i<3;i++) waves += '<circle cx="150" cy="105" r="'+(18+i*16)+'" fill="none" stroke="#3ddbb0" stroke-width="1.2" opacity="0">'
+    + '<animate attributeName="opacity" values="0;.8;0" dur="1.8s" begin="'+(i*.3)+'s" repeatCount="indefinite"/></circle>';
+  return '<svg viewBox="0 0 420 200" role="img" aria-label="Duas placas trocando dados por rádio">'
+  + mini(20) + mini(290) + waves
+  + '<path d="M150 105 h130" stroke="#3ddbb0" stroke-width="1" stroke-dasharray="4 6" opacity=".5"/>'
+  + '<rect width="34" height="16" rx="3" fill="#3ddbb0" opacity=".9"><animateMotion path="M140 97 h150" dur="2s" repeatCount="indefinite"/></rect>'
+  + '<text x="215" y="46" text-anchor="middle" font-size="11" fill="#3ddbb0" font-family="monospace">pacote de dados · 2,4 GHz</text>'
+  + '<text x="215" y="176" text-anchor="middle" font-size="10" fill="#7f9a8f" font-family="monospace">rádio próprio (leve) ou Bluetooth Low Energy</text>'
+  + '</svg>';
+};
+
+/* camadas ------------------------------------------------------------ */
+F.layers = () => {
+  const rows = [['Seu programa','blocos, Python ou C++','#3ddbb0'],
+                ['Runtime / CODAL','agenda tarefas e eventos','#7fd6b8'],
+                ['Firmware e drivers','fala com cada periférico','#e0a458'],
+                ['Hardware','CPU, memória, sensores','#ff3b2f']];
+  let g='';
+  rows.forEach((r,i)=>{
+    const y=i*52+10, w=380-i*0;
+    g += '<rect x="20" y="'+y+'" width="'+w+'" height="42" rx="8" fill="rgba(8,23,18,.9)" stroke="'+r[2]+'" stroke-width="1.3"/>'
+      + '<text x="38" y="'+(y+26)+'" font-size="13" fill="#eef4f1" font-family="sans-serif">'+r[0]+'</text>'
+      + '<text x="386" y="'+(y+26)+'" text-anchor="end" font-size="10" fill="#7f9a8f" font-family="monospace">'+r[1]+'</text>';
+    if(i<3) g += '<path d="M210 '+(y+42)+' v10" stroke="#3a6b5c" stroke-width="1.4" marker-end=""/>';
+  });
+  return '<svg viewBox="0 0 420 230" role="img" aria-label="Camadas de software e hardware">'+g+'</svg>';
+};
+
+/* pipeline de gravação ------------------------------------------------ */
+F.pipeline = () => {
+  const step = (x,t,s) => '<rect x="'+x+'" y="52" width="88" height="66" rx="9" fill="rgba(10,31,24,.85)" stroke="rgba(224,164,88,.4)"/>'
+    + '<text x="'+(x+44)+'" y="82" text-anchor="middle" font-size="12" fill="#eef4f1" font-family="sans-serif">'+t+'</text>'
+    + '<text x="'+(x+44)+'" y="99" text-anchor="middle" font-size="9" fill="#7f9a8f" font-family="monospace">'+s+'</text>';
+  let arrows='';
+  [96,196,296].forEach((x,i)=>{
+    arrows += '<path d="M'+x+' 85 h20" stroke="#3a6b5c" stroke-width="1.4"/>'
+      + '<circle r="3.5" fill="#e0a458"><animateMotion path="M'+x+' 85 h20" dur="1.2s" begin="'+(i*.4)+'s" repeatCount="indefinite"/></circle>';
+  });
+  return '<svg viewBox="0 0 420 170" role="img" aria-label="Do código ao hardware">'
+  + step(8,'Código','blocos/Python') + step(116,'Compilar','na nuvem ou local')
+  + step(216,'Arquivo','.hex') + step(316,'Gravar','USB · DAPLink') + arrows
+  + '<text x="210" y="142" text-anchor="middle" font-size="10" fill="#5d7a70" font-family="monospace">compilação cruzada: o código nasce no PC e roda no MCU</text>'
+  + '</svg>';
+};
+
+/* laço + interrupção -------------------------------------------------- */
+F.loop = () => {
+  return '<svg viewBox="0 0 420 220" role="img" aria-label="Laço principal e interrupções">'
+  + '<circle cx="140" cy="110" r="66" fill="none" stroke="#3ddbb0" stroke-width="1.6" stroke-dasharray="7 7"/>'
+  + '<circle r="6" fill="#3ddbb0"><animateMotion path="M140 44 a66 66 0 1 1 -.1 0" dur="4s" repeatCount="indefinite"/></circle>'
+  + '<text x="140" y="104" text-anchor="middle" font-size="13" fill="#eef4f1" font-family="sans-serif">laço principal</text>'
+  + '<text x="140" y="122" text-anchor="middle" font-size="10" fill="#7f9a8f" font-family="monospace">forever / while True</text>'
+  + '<rect x="246" y="34" width="150" height="52" rx="9" fill="rgba(255,59,47,.1)" stroke="#ff3b2f" stroke-width="1.2"/>'
+  + '<text x="321" y="58" text-anchor="middle" font-size="12" fill="#eef4f1" font-family="sans-serif">Interrupção</text>'
+  + '<text x="321" y="74" text-anchor="middle" font-size="9" fill="#c98a80" font-family="monospace">botão, tempo, sensor</text>'
+  + '<path d="M246 60 h-32 l-8 42" stroke="#ff3b2f" stroke-width="1.4" fill="none" stroke-dasharray="4 4"/>'
+  + '<rect x="246" y="132" width="150" height="52" rx="9" fill="rgba(224,164,88,.08)" stroke="#e0a458" stroke-width="1.2"/>'
+  + '<text x="321" y="156" text-anchor="middle" font-size="12" fill="#eef4f1" font-family="sans-serif">Tratador</text>'
+  + '<text x="321" y="172" text-anchor="middle" font-size="9" fill="#a98a5e" font-family="monospace">executa e devolve o controle</text>'
+  + '<path d="M321 86 v46" stroke="#e0a458" stroke-width="1.4"/>'
+  + '</svg>';
+};
+
+/* projeto: termômetro -------------------------------------------------- */
+F.project = () => {
+  return '<svg viewBox="0 0 420 220" role="img" aria-label="Projeto de termômetro">'
+  + '<rect x="16" y="30" width="150" height="140" rx="10" fill="rgba(10,31,24,.7)" stroke="rgba(61,219,176,.3)"/>'
+  + '<text x="91" y="56" text-anchor="middle" font-size="11" fill="#3ddbb0" font-family="monospace">ENTRADA</text>'
+  + '<path d="M84 76a5 5 0 0 1 10 0v40a11 11 0 1 1-10 0z" fill="none" stroke="#3ddbb0" stroke-width="2"/>'
+  + '<circle cx="89" cy="128" r="7" fill="#ff3b2f"><animate attributeName="r" values="7;8.5;7" dur="2s" repeatCount="indefinite"/></circle>'
+  + '<text x="91" y="158" text-anchor="middle" font-size="10" fill="#7f9a8f" font-family="monospace">temperature()</text>'
+  + '<path d="M172 100 h50" stroke="#3a6b5c" stroke-width="1.5" stroke-dasharray="4 4"/>'
+  + '<circle r="4" fill="#3ddbb0"><animateMotion path="M172 100 h50" dur="1.4s" repeatCount="indefinite"/></circle>'
+  + '<rect x="228" y="30" width="176" height="140" rx="10" fill="rgba(10,31,24,.7)" stroke="rgba(255,59,47,.3)"/>'
+  + '<text x="316" y="56" text-anchor="middle" font-size="11" fill="#ff3b2f" font-family="monospace">SAÍDA</text>'
+  + '<text x="316" y="112" text-anchor="middle" font-size="34" fill="#eef4f1" font-family="monospace">31°C</text>'
+  + '<text x="316" y="140" text-anchor="middle" font-size="11" fill="#ff9a90" font-family="monospace">display + alerta sonoro</text>'
+  + '<text x="210" y="200" text-anchor="middle" font-size="10" fill="#5d7a70" font-family="monospace">medir · decidir · agir — em menos de 1 ms</text>'
+  + '</svg>';
+};
+
+/* =================================================================
+   ROTEIRO
+================================================================= */
+const DECK = [
+{ kind:"cover", chapter:"Abertura", fig:"board",
+  title:'Sistemas<br><em>Embarcados</em>', sub:"COMPUTADORES QUE NÃO PARECEM COMPUTADORES",
+  byline:"Conceitos fundamentais, ilustrados com a placa micro:bit" },
+
+{ kind:"act", n:"ATO 01", chapter:"Ato 1 · Fundamentos", title:"O que é um sistema embarcado",
+  lede:"Antes da placa, a ideia: um computador dedicado a uma única tarefa, escondido dentro de outra coisa." },
+
+{ kind:"content", chapter:"Ato 1 · Fundamentos", fig:"flow", cap:"Arquitetura básica de qualquer embarcado",
+  eyebrow:"Definição", title:"Um computador com um trabalho só",
+  lede:["Sistema embarcado é um computador completo — processador, memória e programa — <b>dedicado a uma função específica</b> dentro de um equipamento maior.",
+        "O ciclo é sempre o mesmo: ele <b>lê o mundo</b> por sensores, <b>decide</b> em software e <b>age</b> por atuadores. E repete isso indefinidamente."],
+  chips:["Função <b>dedicada</b>","Roda <b>sem sistema operacional</b> (ou com um mínimo)","Invisível ao usuário"] },
+
+{ kind:"cards2", chapter:"Ato 1 · Fundamentos",
+  eyebrow:"Comparação", title:"Embarcado x computador de uso geral",
+  lede:["A diferença não é tamanho: é <b>propósito</b>. Um notebook precisa rodar qualquer programa; um embarcado precisa acertar sempre o mesmo."],
+  cards:[
+    {cls:"a",tag:"USO GERAL",h:"Notebook, celular",p:"Executa programas que o usuário escolhe. Muita memória, sistema operacional completo, energia abundante e resposta em tempo variável."},
+    {cls:"b",tag:"EMBARCADO",h:"micro:bit, ECU, marcapasso",p:"Executa um firmware fixo. Pouca memória, energia limitada, resposta previsível e vida útil de anos sem reiniciar."}
+  ] },
+
+{ kind:"content", chapter:"Ato 1 · Fundamentos", fig:"ubiquity", cap:"Quase todo equipamento eletrônico tem um dentro",
+  eyebrow:"Onipresença", title:"Você usa dezenas por dia sem perceber",
+  lede:["Um carro moderno tem <b>dezenas de módulos eletrônicos</b> controlando injeção, freios e airbag. O micro-ondas, a fechadura, o fone sem fio e o elevador também têm o seu.",
+        "A maior parte dos processadores fabricados no mundo <b>não vai para PCs</b>: vai para sistemas embarcados."],
+  chips:["Automotivo","Medicina","Indústria","Casa","Agro"] },
+
+{ kind:"cards4", chapter:"Ato 1 · Fundamentos",
+  eyebrow:"Características", title:"O que torna o projeto diferente",
+  lede:["Programar embarcado é programar <b>com restrições</b> — e essas restrições definem todas as decisões técnicas."],
+  cards:[
+    {h:"Recursos escassos",p:"Kilobytes de memória, não gigabytes. Cada variável e cada linha de código pesam."},
+    {h:"Tempo real",p:"A resposta tem prazo. Um airbag atrasado 100 ms é um airbag inútil."},
+    {h:"Confiabilidade",p:"Precisa funcionar por anos, sem manutenção e sem travar. Reiniciar não é opção."},
+    {h:"Baixo consumo",p:"Muitos vivem de bateria. O sistema passa mais tempo dormindo do que acordado."}
+  ] },
+
+{ kind:"act", n:"ATO 02", chapter:"Ato 2 · Hardware", title:"Por dentro do hardware",
+  lede:"O que existe dentro daquele chip preto de poucos milímetros." },
+
+{ kind:"content", chapter:"Ato 2 · Hardware", fig:"mcu", cap:"Tudo em uma única pastilha de silício",
+  eyebrow:"Microcontrolador", title:"Um sistema inteiro num chip",
+  lede:["No PC, processador, memória e periféricos são peças separadas. No embarcado, tudo vem <b>integrado numa só pastilha</b>: o microcontrolador (MCU).",
+        "A <b>Flash</b> guarda o programa e não apaga ao desligar. A <b>RAM</b> guarda as variáveis enquanto roda. Os periféricos conversam com o mundo."],
+  chips:["Microprocessador = só o núcleo","Microcontrolador = núcleo <b>+ memória + periféricos</b>"] },
+
+{ kind:"content", chapter:"Ato 2 · Hardware", fig:"signals", cap:"Três formas de representar informação nos pinos",
+  eyebrow:"Entradas e saídas", title:"Como o chip fala com o mundo",
+  lede:["Sinais <b>digitais</b> só têm dois estados: ligado ou desligado. É como um botão ou um LED simples funcionam.",
+        "Sinais <b>analógicos</b> variam continuamente — luz, temperatura, som. Um conversor <b>ADC</b> transforma essa variação em número.",
+        "E o <b>PWM</b> simula intensidade ligando e desligando muito rápido: é assim que se controla brilho de LED e velocidade de motor."],
+  note:"<b>Atuador</b> é a saída que muda algo no mundo físico: LED, motor, alto-falante, relé." },
+
+{ kind:"act", n:"ATO 03", chapter:"Ato 3 · micro:bit", title:"A placa micro:bit",
+  lede:"Um embarcado real, completo e pequeno o bastante para caber na palma da mão." },
+
+{ kind:"content", chapter:"Ato 3 · micro:bit", fig:"board", cap:"micro:bit v2 — 5 x 4 cm",
+  eyebrow:"Conhecendo a placa", title:"Tudo o que ela já traz de fábrica",
+  lede:["Criada pela <b>BBC</b> em 2016 para o ensino de computação, a micro:bit reúne processador, sensores, display e rádio numa placa do tamanho de um cartão.",
+        "É um sistema embarcado didático: simples de programar, mas com a mesma arquitetura de um produto industrial."],
+  chips:["Display <b>5x5 LEDs</b>","Botões <b>A e B</b>","Rádio + <b>Bluetooth</b>","25 pinos"] },
+
+{ kind:"cards2", chapter:"Ato 3 · micro:bit",
+  eyebrow:"Especificações", title:"Duas gerações, mesma proposta",
+  lede:["A diferença entre as versões mostra bem como o hardware embarcado evolui: mais memória e mais periféricos, mesmo formato."],
+  cards:[
+    {cls:"a",tag:"V1 · 2016",h:"Nordic nRF51822",p:"ARM Cortex-M0 a 16 MHz · 16 KB de RAM · 256 KB de Flash · acelerômetro, bússola e Bluetooth."},
+    {cls:"b",tag:"V2 · 2020",h:"Nordic nRF52833",p:"ARM Cortex-M4 a 64 MHz · 128 KB de RAM · 512 KB de Flash · acrescenta microfone, alto-falante e logo sensível ao toque."}
+  ],
+  note:"Para comparar: um PC comum tem <b>cerca de 100 mil vezes mais RAM</b> que a v2. E ainda assim ela dá conta do trabalho dela." },
+
+{ kind:"content", chapter:"Ato 3 · micro:bit", fig:"sensors", cap:"Sensores integrados na própria placa",
+  eyebrow:"Sensores", title:"A placa percebe o ambiente",
+  lede:["Dois detalhes elegantes de engenharia: a <b>temperatura</b> não vem de um sensor externo, mas do próprio silício do processador; e a <b>luz</b> é medida pelos mesmos LEDs que formam o display, funcionando ao contrário.",
+        "Reaproveitar hardware que já existe é uma decisão típica de projeto embarcado — economiza espaço, energia e custo."] },
+
+{ kind:"content", chapter:"Ato 3 · micro:bit", fig:"matrix", cap:"Ilustração da matriz acesa",
+  eyebrow:"Saída visual", title:"25 LEDs e um truque de velocidade",
+  lede:["A placa não acende os 25 LEDs ao mesmo tempo: ela acende <b>uma linha por vez</b>, muito rápido, em ciclo. Seu olho junta as partes e vê a imagem inteira.",
+        "Essa técnica é a <b>multiplexação</b>, e existe para economizar pinos do microcontrolador — que são sempre poucos."],
+  chips:["Varredura contínua","Brilho por <b>PWM</b>","Também serve de sensor de luz"] },
+
+{ kind:"content", chapter:"Ato 3 · micro:bit", fig:"radio", cap:"Comunicação entre duas placas",
+  eyebrow:"Comunicação", title:"Conversando sem fio",
+  lede:["O mesmo chip que processa também transmite em <b>2,4 GHz</b>. Dá para usar o rádio simples entre placas ou o <b>Bluetooth Low Energy</b> para falar com celular.",
+        "É a porta de entrada para a <b>Internet das Coisas</b>: sensores espalhados, cada um enviando pequenas mensagens."],
+  chips:["Rádio entre placas","BLE com o celular","Baixo consumo"] },
+
+{ kind:"act", n:"ATO 04", chapter:"Ato 4 · Software", title:"Do código para a placa",
+  lede:"Como um programa escrito no computador acaba morando dentro do chip." },
+
+{ kind:"content", chapter:"Ato 4 · Software", fig:"layers", cap:"Camadas entre o seu código e o silício",
+  eyebrow:"Firmware", title:"O software que mora no hardware",
+  lede:["<b>Firmware</b> é o programa gravado na memória permanente do dispositivo. Ele não é instalado pelo usuário: ele já vem sendo o produto.",
+        "Entre o seu código e o chip existe o <b>runtime</b>, que organiza tarefas e eventos, e os <b>drivers</b>, que sabem falar com cada periférico."] },
+
+{ kind:"content", chapter:"Ato 4 · Software", fig:"pipeline", cap:"O caminho completo do programa",
+  eyebrow:"Gravação", title:"Compilar aqui, executar lá",
+  lede:["O código é escrito em blocos, Python ou C++ e vira um arquivo <code>.hex</code> com as instruções que o processador entende.",
+        "Ao ligar a placa no USB, ela aparece como um <b>pen drive</b>. Arrastar o arquivo grava o programa direto na Flash — e ele passa a rodar sozinho, com ou sem computador."],
+  chips:["MakeCode (blocos)","MicroPython","C++ / CODAL"] },
+
+{ kind:"content", chapter:"Ato 4 · Software", fig:"loop", cap:"Laço principal e interrupções",
+  eyebrow:"Execução", title:"Nunca termina, sempre responde",
+  lede:["Um programa embarcado não tem fim: ele entra num <b>laço infinito</b> e fica repetindo leitura e decisão.",
+        "Quando algo urgente acontece — um botão apertado, um tempo esgotado — uma <b>interrupção</b> pausa o laço, executa o tratador e devolve o controle. É assim que a placa parece fazer várias coisas ao mesmo tempo."],
+  note:"Sem interrupção, o programa precisaria ficar perguntando <b>o tempo todo</b> se o botão foi apertado — o que gasta processador e energia à toa." },
+
+{ kind:"code", chapter:"Ato 4 · Software",
+  eyebrow:"MicroPython", title:"O ciclo completo em nove linhas",
+  lede:["Este programa lê a temperatura do chip, decide e mostra o resultado — entrada, processamento e saída no mesmo laço."],
+  code:'<span class="k">from</span> microbit <span class="k">import</span> *\n\n<span class="k">while</span> <span class="n">True</span>:\n    t = <span class="f">temperature</span>()          <span class="c"># leitura em °C</span>\n    <span class="k">if</span> t > <span class="n">30</span>:\n        display.<span class="f">show</span>(Image.SAD)\n        display.<span class="f">scroll</span>(t)\n    <span class="k">else</span>:\n        display.<span class="f">show</span>(Image.HAPPY)\n    <span class="f">sleep</span>(<span class="n">1000</span>)          <span class="c"># dorme 1 s e repete</span>' },
+
+{ kind:"content", chapter:"Ato 4 · Software", fig:"project", cap:"Termômetro com alerta",
+  eyebrow:"Aplicação", title:"De exercício a produto",
+  lede:["Esse mesmo laço, trocando o sensor e o atuador, vira controle de estufa, alarme de porta, contador de passos ou monitor de umidade do solo.",
+        "A lógica não muda: <b>medir, decidir, agir</b>. É o que separa um projeto escolar de um produto — escala e confiabilidade, não conceito."],
+  chips:["Estufa","Alarme","Contador de passos","Monitor de solo"] },
+
+{ kind:"act", n:"FIM", chapter:"Encerramento", title:"Por que isso importa",
+  lede:"A computação saiu da mesa e foi morar dentro das coisas. Quem entende embarcados projeta o que vem depois do aplicativo." }
+];
+
+/* =================================================================
+   MONTAGEM
+================================================================= */
+const stage = document.getElementById('stage');
+
+function textCol(s){
+  const chips = s.chips ? '<div class="chips up d4">'+s.chips.map(c=>'<span class="chip">'+c+'</span>').join('')+'</div>' : '';
+  const note = s.note ? '<div class="note up d4">'+s.note+'</div>' : '';
+  return '<div><div class="eyebrow up d1">'+s.eyebrow+'</div>'
+    + '<h2 class="up d1">'+s.title+'</h2><div class="rule up d2"></div>'
+    + s.lede.map((p,i)=>'<p class="lede up d'+Math.min(i+2,4)+'">'+p+'</p>').join('')
+    + chips + note + '</div>';
+}
+
+DECK.forEach(s=>{
+  const el = document.createElement('section');
+  el.className = 'slide ' + (s.kind==='cover'?'cover':s.kind==='act'?'act':'content');
+  el.setAttribute('aria-hidden','true');
+  let html = '';
+
+  if(s.kind==='cover'){
+    html = '<div class="inner"><div><h1 class="up d1">'+s.title+'</h1>'
+      + '<div class="sub up d2">'+s.sub+'</div><div class="byline up d3">'+s.byline+'</div></div>'
+      + '<figure class="fig">'+F[s.fig]()+'</figure></div>';
+  } else if(s.kind==='act'){
+    html = '<div class="inner solo"><div><div class="num up d1">'+s.n+'</div>'
+      + '<h2 class="up d2">'+s.title+'</h2><div class="rule up d3"></div>'
+      + '<p class="lede up d3">'+s.lede+'</p></div></div>';
+  } else if(s.kind==='cards2' || s.kind==='cards4'){
+    const cls = s.kind==='cards2' ? 'two' : 'four';
+    const cards = s.cards.map(c=>'<div class="kard '+(c.cls||'')+'">'
+      + (c.tag?'<span class="tag">'+c.tag+'</span>':'')
+      + '<h4>'+c.h+'</h4><p>'+c.p+'</p></div>').join('');
+    html = '<div class="inner">'+textCol(s)+'<div class="cards '+cls+' up d3">'+cards+'</div></div>';
+  } else if(s.kind==='code'){
+    html = '<div class="inner">'+textCol(s)+'<pre class="code up d3"><code>'+s.code+'</code></pre></div>';
+  } else {
+    html = '<div class="inner">'+textCol(s)
+      + '<figure class="fig">'+F[s.fig]()+(s.cap?'<figcaption>'+s.cap+'</figcaption>':'')+'</figure></div>';
+  }
+  el.innerHTML = html;
+  stage.appendChild(el);
+});
+
+/* =================================================================
+   SOM — sintetizado, sem arquivo externo
+================================================================= */
+let actx = null, muted = false;
+function audioReady(){
+  if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function blip(freq, dur, type, vol){
+  if(muted) return;
+  const ctx = audioReady(); if(!ctx) return;
+  const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+  o.type = type || 'square'; o.frequency.setValueAtTime(freq, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(freq*0.55, ctx.currentTime + dur);
+  f.type = 'lowpass'; f.frequency.value = 2600;
+  g.gain.setValueAtTime(0.0001, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(vol||0.09, ctx.currentTime + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+  o.connect(f); f.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime + dur + 0.02);
+}
+function chirp(dir){ blip(dir>0?880:620, 0.16, 'square', 0.075); setTimeout(()=>blip(dir>0?1320:440,0.1,'triangle',0.05),55); }
+function bootTune(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>blip(f,0.16,'square',0.07), i*140)); }
+
+/* =================================================================
+   NAVEGAÇÃO
+================================================================= */
+const slides = [...document.querySelectorAll('.slide')];
+const dotsBox = document.getElementById('dots');
+const pulse = document.getElementById('pulse'), sweep = document.getElementById('sweep');
+const bar = document.getElementById('bar');
+let idx = 0, started = false, autoplay = false, autoTimer = null;
+
+slides.forEach((_,i)=>{
+  const b = document.createElement('button');
+  b.type='button'; b.title='Slide '+(i+1);
+  b.addEventListener('click',()=>goTo(i));
+  dotsBox.appendChild(b);
+});
+document.getElementById('tot').textContent = slides.length;
+document.getElementById('tot2').textContent = slides.length;
+
+function paint(){
+  document.getElementById('cur').textContent = idx+1;
+  document.getElementById('cur2').textContent = idx+1;
+  document.getElementById('chapter').textContent = DECK[idx].chapter || '';
+  bar.style.width = ((idx+1)/slides.length*100)+'%';
+  [...dotsBox.children].forEach((d,i)=>d.setAttribute('aria-current', i===idx?'true':'false'));
+}
+
+function goTo(n, silent){
+  n = Math.max(0, Math.min(slides.length-1, n));
+  if(n===idx && slides[idx].classList.contains('active')) return;
+  const dir = n > idx ? 1 : -1;
+  const old = slides[idx];
+  old.classList.remove('active'); old.classList.add('leaving');
+  old.style.setProperty('--out', dir>0 ? '-6%' : '6%');
+  old.style.setProperty('--rot', dir>0 ? '-8deg' : '8deg');
+  old.setAttribute('aria-hidden','true');
+  setTimeout(()=>old.classList.remove('leaving'), 720);
+
+  idx = n;
+  const cur = slides[idx];
+  cur.classList.remove('leaving'); void cur.offsetWidth;
+  cur.classList.add('active'); cur.setAttribute('aria-hidden','false');
+
+  if(!silent){
+    chirp(dir);
+    pulse.classList.remove('fire'); void pulse.offsetWidth; pulse.classList.add('fire');
+    sweep.classList.remove('fire'); void sweep.offsetWidth; sweep.classList.add('fire');
+  }
+  paint();
+  if(autoplay) queueAuto();
+}
+const next = ()=>goTo(idx+1), prev = ()=>goTo(idx-1);
+
+document.getElementById('next').addEventListener('click',next);
+document.getElementById('prev').addEventListener('click',prev);
+
+document.addEventListener('keydown', e=>{
+  if(!started){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); start(); } return; }
+  switch(e.key){
+    case 'ArrowRight': case 'PageDown': case ' ': e.preventDefault(); next(); break;
+    case 'ArrowLeft': case 'PageUp': e.preventDefault(); prev(); break;
+    case 'Home': goTo(0); break;
+    case 'End': goTo(slides.length-1); break;
+    case 'f': case 'F': toggleFull(); break;
+    case 'm': case 'M': toggleMute(); break;
+    case 'p': case 'P': toggleAuto(); break;
+  }
+});
+
+let tx=0, ty=0;
+document.addEventListener('touchstart', e=>{ tx=e.changedTouches[0].clientX; ty=e.changedTouches[0].clientY; }, {passive:true});
+document.addEventListener('touchend', e=>{
+  const dx=e.changedTouches[0].clientX-tx, dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>55 && Math.abs(dx)>Math.abs(dy)) dx<0 ? next() : prev();
+}, {passive:true});
+
+let wheelLock=false;
+document.addEventListener('wheel', e=>{
+  if(wheelLock || Math.abs(e.deltaY)<24) return;
+  wheelLock=true; e.deltaY>0 ? next() : prev();
+  setTimeout(()=>wheelLock=false, 780);
+}, {passive:true});
+
+function toggleFull(){
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+function toggleMute(){
+  muted = !muted;
+  const b = document.getElementById('mute');
+  b.setAttribute('aria-pressed', muted?'true':'false');
+  b.title = muted ? 'Som desligado (M)' : 'Som ligado (M)';
+}
+function queueAuto(){ clearTimeout(autoTimer); autoTimer=setTimeout(()=>{ idx>=slides.length-1 ? goTo(0) : next(); }, 10000); }
+function toggleAuto(){
+  autoplay = !autoplay;
+  document.getElementById('auto').setAttribute('aria-pressed', autoplay?'true':'false');
+  autoplay ? queueAuto() : clearTimeout(autoTimer);
+}
+document.getElementById('full').addEventListener('click',toggleFull);
+document.getElementById('mute').addEventListener('click',toggleMute);
+document.getElementById('auto').addEventListener('click',toggleAuto);
+
+/* =================================================================
+   ABERTURA: sequência de boot
+================================================================= */
+const gate = document.getElementById('gate');
+const boot = document.getElementById('boot');
+const bm = document.getElementById('bootMatrix');
+const blog = document.getElementById('bootLog');
+for(let i=0;i<25;i++) bm.appendChild(document.createElement('i'));
+const cells = [...bm.children];
+
+const HEART = [1,3,5,7,9,10,14,16,18,22];
+const LINES = ['inicializando processador...','montando periféricos...','sensores prontos','rádio ativo'];
+
+function start(){
+  if(started) return; started = true;
+  audioReady(); bootTune();
+  gate.classList.add('off'); setTimeout(()=>gate.remove(), 480);
+  boot.classList.add('run');
+
+  let step = 0;
+  const scan = setInterval(()=>{
+    cells.forEach((c,i)=>c.classList.toggle('on', Math.floor(i/5) === step%5));
+    if(step<4){ blog.textContent = LINES[step]; blip(1200+step*160, .05, 'square', .045); }
+    step++;
+    if(step>=8){
+      clearInterval(scan);
+      cells.forEach((c,i)=>c.classList.toggle('on', HEART.includes(i)));
+      blog.textContent = 'sistema em execução';
+      boot.classList.add('reveal');
+      blip(880,.12,'square',.07); setTimeout(()=>blip(1320,.2,'triangle',.06),130);
+      setTimeout(()=>{
+        boot.classList.add('done');
+        setTimeout(()=>{
+          boot.classList.remove('run','reveal','done');
+          goTo(0, true); chirp(1);
+          pulse.classList.add('fire');
+        }, 520);
+      }, 1100);
+    }
+  }, 190);
+}
+document.getElementById('startBtn').addEventListener('click', start);
+
+paint();
+</script>
+</body>
+</html>
